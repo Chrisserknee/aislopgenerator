@@ -36,19 +36,20 @@ export default function Home() {
       <div className="fixed bottom-20 left-20 text-4xl" style={{ animation: 'blink 1s infinite' }}>⚠️</div>
       <div className="fixed bottom-10 right-10 text-7xl animate-bounce">🤡</div>
       
-      <div className="container mx-auto p-4 relative z-10">
-        <h1 className="text-8xl font-bold text-center mb-2 drop-shadow-2xl" style={{
+      <div className="container mx-auto p-2 sm:p-4 relative z-10 max-w-full">
+        <h1 className="text-4xl sm:text-6xl lg:text-8xl font-bold text-center mb-2 drop-shadow-2xl px-2" style={{
           fontFamily: 'Comic Sans MS, cursive',
           color: '#000000',
           textShadow: '5px 5px 0px #ff00ff, -5px -5px 0px #00ffff, 5px -5px 0px #ffff00',
           animation: 'shake 0.5s infinite',
-          transform: 'rotate(-2deg)'
+          transform: 'rotate(-2deg)',
+          lineHeight: '1.1'
         }}>
           🤖 AI SLOP GENERATOR 🤖
         </h1>
         
-        <div className="text-center mb-6">
-          <p className="text-3xl font-bold inline-block px-4 py-2 bg-yellow-300 border-4 border-black transform rotate-1" style={{
+        <div className="text-center mb-4 lg:mb-6 px-2">
+          <p className="text-lg sm:text-2xl lg:text-3xl font-bold inline-block px-2 sm:px-4 py-1 sm:py-2 bg-yellow-300 border-3 sm:border-4 border-black transform rotate-1" style={{
             fontFamily: 'Impact, sans-serif',
             textShadow: '3px 3px 0px #ff0000',
             animation: 'shake 2s infinite'
@@ -57,8 +58,8 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="text-center mb-4">
-          <span className="inline-block px-3 py-1 bg-red-500 text-white font-bold text-xl rotate-3">⚠️ WARNING: EXTREMELY LOW QUALITY ⚠️</span>
+        <div className="text-center mb-3 lg:mb-4 px-2">
+          <span className="inline-block px-2 sm:px-3 py-1 bg-red-500 text-white font-bold text-sm sm:text-lg lg:text-xl rotate-3">⚠️ WARNING: EXTREMELY LOW QUALITY ⚠️</span>
         </div>
 
         <MemeGenerator />

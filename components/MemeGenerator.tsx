@@ -304,18 +304,47 @@ export default function MemeGenerator() {
       return
     }
 
-    try {
-      toast.loading('Preparing download...')
-      const canvas = await html2canvas(canvasRef.current, { scale: 2 })
-      const link = document.createElement('a')
-      link.download = `meme-${Date.now()}.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
-      toast.success('Downloaded!')
-    } catch (error) {
-      toast.error('Download failed')
+    if (!imageUrl) {
+      toast.error('Generate an image first!')
+      return
     }
-  }, [])
+
+    try {
+      toast.loading('Preparing download...', { id: 'download' })
+      
+      // Wait for image to be fully loaded
+      const imgElement = canvasRef.current.querySelector('img')
+      if (imgElement && !imgElement.complete) {
+        await new Promise((resolve) => {
+          imgElement.onload = resolve
+          imgElement.onerror = resolve
+        })
+      }
+      
+      // Use html2canvas to capture the entire canvas including text overlays
+      const canvas = await html2canvas(canvasRef.current, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: canvasRef.current.offsetWidth,
+        height: canvasRef.current.offsetHeight,
+      })
+      
+      const link = document.createElement('a')
+      link.download = `slop-meme-${Date.now()}.png`
+      link.href = canvas.toDataURL('image/png', 1.0)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      toast.success('💾 SLOP DOWNLOADED!', { id: 'download' })
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Download failed', { id: 'download' })
+    }
+  }, [imageUrl])
 
   return (
     <div className="max-w-6xl mx-auto relative">
@@ -339,23 +368,23 @@ export default function MemeGenerator() {
         }
       `}</style>
       
-      <div className="bg-yellow-200 border-8 border-red-500 p-6 mb-6 transform rotate-1 shadow-2xl" style={{
+      <div className="bg-yellow-200 border-4 lg:border-8 border-red-500 p-4 lg:p-6 mb-4 lg:mb-6 transform rotate-1 shadow-2xl w-full" style={{
         background: 'repeating-linear-gradient(45deg, #ffff00, #ffff00 10px, #ff00ff 10px, #ff00ff 20px)'
       }}>
-        <div className="flex gap-4 mb-4 items-center">
+        <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 mb-3 lg:mb-4 items-stretch sm:items-center">
           <input
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && generateImage(prompt)}
             placeholder="TYPE SOME GARBAGE HERE..."
-            className="flex-1 px-4 py-4 text-2xl font-bold border-4 border-black bg-white text-black placeholder-gray-500 transform -rotate-1"
+            className="flex-1 px-3 lg:px-4 py-3 lg:py-4 text-lg lg:text-2xl font-bold border-3 lg:border-4 border-black bg-white text-black placeholder-gray-500 transform -rotate-1 w-full"
             style={{ fontFamily: 'Comic Sans MS, cursive', boxShadow: '10px 10px 0px #000' }}
           />
           <button
             onClick={() => generateImage(prompt)}
             disabled={generating}
-            className="px-8 py-4 bg-red-500 hover:bg-red-600 border-4 border-black font-bold text-white text-xl transform rotate-2 disabled:opacity-50"
+            className="px-4 lg:px-8 py-3 lg:py-4 bg-red-500 hover:bg-red-600 border-3 lg:border-4 border-black font-bold text-white text-base lg:text-xl transform rotate-2 disabled:opacity-50 whitespace-nowrap"
             style={{ 
               fontFamily: 'Impact, sans-serif',
               textShadow: '3px 3px 0px #000',
@@ -363,28 +392,28 @@ export default function MemeGenerator() {
               animation: generating ? 'wiggle 0.3s infinite' : 'none'
             }}
           >
-            {generating ? '⚠️ SLOPPING...' : '🚨 GENERATE SLOP 🚨'}
+            {generating ? '⚠️ SLOPPING...' : '🚨 GENERATE 🚨'}
           </button>
         </div>
 
-        <div className="bg-lime-300 border-4 border-green-600 p-3 transform -rotate-1">
-          <p className="text-black font-bold text-lg mb-2" style={{ fontFamily: 'Arial Black, sans-serif', textShadow: '2px 2px 0px #fff' }}>
+        <div className="bg-lime-300 border-3 lg:border-4 border-green-600 p-2 lg:p-3 transform -rotate-1">
+          <p className="text-black font-bold text-base lg:text-lg mb-2" style={{ fontFamily: 'Arial Black, sans-serif', textShadow: '2px 2px 0px #fff' }}>
             💩 QUICK SLOP TEMPLATES 💩
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 lg:gap-2">
             {VIRAL_TEMPLATES.map((t, i) => (
               <button
                 key={i}
                 onClick={() => handleTemplate(t)}
                 disabled={generating}
-                className="px-4 py-2 bg-cyan-400 border-3 border-blue-600 font-bold text-black text-sm transform hover:rotate-3 disabled:opacity-50"
+                className="px-2 lg:px-4 py-1.5 lg:py-2 bg-cyan-400 border-2 lg:border-3 border-blue-600 font-bold text-black text-xs lg:text-sm transform hover:rotate-3 disabled:opacity-50"
                 style={{ 
                   fontFamily: 'Courier New, monospace',
                   boxShadow: '4px 4px 0px #000',
                   animation: i % 2 === 0 ? 'wiggle 2s infinite' : 'none'
                 }}
               >
-                {t.prompt.substring(0, 18).toUpperCase()}...
+                {t.prompt.substring(0, 15).toUpperCase()}...
               </button>
             ))}
           </div>
@@ -393,22 +422,22 @@ export default function MemeGenerator() {
 
       {/* Generating Progress Bar */}
       {generating && (
-        <div className="mb-6 bg-black border-4 border-yellow-400 p-4 transform rotate-1" style={{
+        <div className="mb-4 lg:mb-6 bg-black border-3 lg:border-4 border-yellow-400 p-3 lg:p-4 transform rotate-1 w-full" style={{
           boxShadow: '8px 8px 0px #ff00ff'
         }}>
-          <div className="flex items-center gap-4 mb-2">
-            <span className="text-3xl animate-spin" style={{ animationDuration: '1s' }}>🌀</span>
-            <span className="text-2xl font-bold text-yellow-400" style={{ 
+          <div className="flex items-center gap-2 lg:gap-4 mb-2 flex-wrap">
+            <span className="text-2xl lg:text-3xl animate-spin" style={{ animationDuration: '1s' }}>🌀</span>
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-400 flex-1" style={{ 
               fontFamily: 'Impact, sans-serif',
               textShadow: '3px 3px 0px #000'
             }}>
               GENERATING SLOP...
             </span>
-            <span className="text-xl font-bold text-white ml-auto" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+            <span className="text-lg lg:text-xl font-bold text-white" style={{ fontFamily: 'Arial Black, sans-serif' }}>
               {Math.round(generationProgress)}%
             </span>
           </div>
-          <div className="relative w-full h-8 bg-gray-800 border-3 border-black overflow-hidden">
+          <div className="relative w-full h-6 lg:h-8 bg-gray-800 border-2 lg:border-3 border-black overflow-hidden">
             <div 
               className="h-full transition-all duration-200 ease-out"
               style={{
@@ -420,7 +449,7 @@ export default function MemeGenerator() {
               }}
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-white font-bold text-sm" style={{ 
+              <span className="text-white font-bold text-xs sm:text-sm px-1" style={{ 
                 fontFamily: 'Comic Sans MS, cursive',
                 textShadow: '2px 2px 0px #000'
               }}>
@@ -434,10 +463,11 @@ export default function MemeGenerator() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 transform hover:rotate-1 transition-transform">
-          <div ref={canvasRef} className="relative bg-black border-8 border-yellow-400 overflow-hidden aspect-square shadow-2xl" style={{
-            boxShadow: '15px 15px 0px #ff00ff, -15px -15px 0px #00ffff'
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="lg:col-span-2 transform hover:rotate-1 transition-transform w-full">
+          <div ref={canvasRef} className="relative bg-black border-4 lg:border-8 border-yellow-400 overflow-hidden aspect-square w-full shadow-2xl" style={{
+            boxShadow: '15px 15px 0px #ff00ff, -15px -15px 0px #00ffff',
+            maxWidth: '100%'
           }}>
             {generating && !imageUrl ? (
               <div className="flex items-center justify-center h-full bg-gradient-to-br from-pink-500 via-yellow-500 to-cyan-500">
@@ -466,27 +496,31 @@ export default function MemeGenerator() {
                     filter: 'contrast(150%) saturate(200%)'
                   }}
                 />
-                <div className="absolute top-2 left-0 right-0 px-4 text-center" style={{
+                <div className="absolute top-1 lg:top-2 left-0 right-0 px-2 lg:px-4 text-center" style={{
                   fontFamily: 'Comic Sans MS, cursive',
-                  fontSize: `${fontSize}px`,
+                  fontSize: `clamp(20px, ${fontSize * 0.5}px, ${fontSize}px)`,
                   color: '#FFFF00',
                   textShadow: '5px 5px 0px #000, -3px -3px 0px #ff00ff, 3px -3px 0px #00ffff',
                   fontWeight: '900',
                   textTransform: 'uppercase',
                   transform: 'rotate(-2deg)',
-                  WebkitTextStroke: '2px black'
+                  WebkitTextStroke: '2px black',
+                  lineHeight: '1.1',
+                  wordWrap: 'break-word'
                 }}>
                   {topText}
                 </div>
-                <div className="absolute bottom-2 left-0 right-0 px-4 text-center" style={{
+                <div className="absolute bottom-1 lg:bottom-2 left-0 right-0 px-2 lg:px-4 text-center" style={{
                   fontFamily: 'Comic Sans MS, cursive',
-                  fontSize: `${fontSize}px`,
+                  fontSize: `clamp(20px, ${fontSize * 0.5}px, ${fontSize}px)`,
                   color: '#FF00FF',
                   textShadow: '5px 5px 0px #000, -3px -3px 0px #ffff00, 3px -3px 0px #00ffff',
                   fontWeight: '900',
                   textTransform: 'uppercase',
                   transform: 'rotate(2deg)',
-                  WebkitTextStroke: '2px black'
+                  WebkitTextStroke: '2px black',
+                  lineHeight: '1.1',
+                  wordWrap: 'break-word'
                 }}>
                   {bottomText}
                 </div>
@@ -507,11 +541,11 @@ export default function MemeGenerator() {
           </div>
         </div>
 
-        <div className="bg-orange-300 border-6 border-purple-600 p-6 space-y-4 transform -rotate-1" style={{
+        <div className="bg-orange-300 border-4 lg:border-6 border-purple-600 p-4 lg:p-6 space-y-3 lg:space-y-4 transform -rotate-1 w-full" style={{
           background: 'repeating-linear-gradient(90deg, #ffa500, #ffa500 20px, #ff69b4 20px, #ff69b4 40px)',
           boxShadow: '10px 10px 0px #000'
         }}>
-          <h2 className="text-3xl font-bold text-black mb-4 text-center" style={{ 
+          <h2 className="text-2xl lg:text-3xl font-bold text-black mb-3 lg:mb-4 text-center" style={{ 
             fontFamily: 'Comic Sans MS, cursive',
             textShadow: '3px 3px 0px #fff',
             WebkitTextStroke: '1px black'
@@ -522,41 +556,41 @@ export default function MemeGenerator() {
           <button
             onClick={handleAutoText}
             disabled={!imageUrl}
-            className="w-full px-4 py-4 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 border-4 border-black font-bold text-black disabled:opacity-50"
+            className="w-full px-3 lg:px-4 py-3 lg:py-4 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 border-3 lg:border-4 border-black font-bold text-black disabled:opacity-50 touch-manipulation"
             style={{ 
               fontFamily: 'Impact, sans-serif',
               textShadow: '2px 2px 0px #fff',
               boxShadow: '6px 6px 0px #000',
-              fontSize: '18px'
+              fontSize: 'clamp(14px, 3vw, 18px)'
             }}
           >
             🤖 AUTO GARBAGE TEXT 🤖
           </button>
 
-          <div className="bg-lime-200 border-3 border-green-600 p-3">
-            <label className="block text-black mb-2 font-bold text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>TOP TEXT:</label>
+          <div className="bg-lime-200 border-2 lg:border-3 border-green-600 p-2 lg:p-3">
+            <label className="block text-black mb-1 lg:mb-2 font-bold text-base lg:text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>TOP TEXT:</label>
             <input
               type="text"
               value={topText}
               onChange={(e) => setTopText(e.target.value)}
-              className="w-full px-3 py-2 bg-white border-3 border-black text-black font-bold"
+              className="w-full px-2 lg:px-3 py-2 bg-white border-2 lg:border-3 border-black text-black font-bold text-sm lg:text-base"
               style={{ fontFamily: 'Comic Sans MS, cursive', boxShadow: '4px 4px 0px #000' }}
             />
           </div>
 
-          <div className="bg-cyan-200 border-3 border-blue-600 p-3">
-            <label className="block text-black mb-2 font-bold text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>BOTTOM TEXT:</label>
+          <div className="bg-cyan-200 border-2 lg:border-3 border-blue-600 p-2 lg:p-3">
+            <label className="block text-black mb-1 lg:mb-2 font-bold text-base lg:text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>BOTTOM TEXT:</label>
             <input
               type="text"
               value={bottomText}
               onChange={(e) => setBottomText(e.target.value)}
-              className="w-full px-3 py-2 bg-white border-3 border-black text-black font-bold"
+              className="w-full px-2 lg:px-3 py-2 bg-white border-2 lg:border-3 border-black text-black font-bold text-sm lg:text-base"
               style={{ fontFamily: 'Comic Sans MS, cursive', boxShadow: '4px 4px 0px #000' }}
             />
           </div>
 
-          <div className="bg-pink-200 border-3 border-red-600 p-3">
-            <label className="block text-black mb-2 font-bold text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+          <div className="bg-pink-200 border-2 lg:border-3 border-red-600 p-2 lg:p-3">
+            <label className="block text-black mb-1 lg:mb-2 font-bold text-base lg:text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>
               SIZE: {fontSize}px
             </label>
             <input
@@ -565,7 +599,7 @@ export default function MemeGenerator() {
               max="100"
               value={fontSize}
               onChange={(e) => setFontSize(parseInt(e.target.value))}
-              className="w-full"
+              className="w-full h-3 lg:h-4"
               style={{ accentColor: '#ff00ff' }}
             />
           </div>
@@ -573,12 +607,12 @@ export default function MemeGenerator() {
           <button
             onClick={downloadMeme}
             disabled={!imageUrl}
-            className="w-full px-4 py-4 bg-green-500 border-4 border-black font-bold text-white disabled:opacity-50"
+            className="w-full px-3 lg:px-4 py-3 lg:py-4 bg-green-500 border-3 lg:border-4 border-black font-bold text-white disabled:opacity-50 touch-manipulation"
             style={{ 
               fontFamily: 'Impact, sans-serif',
               textShadow: '3px 3px 0px #000',
               boxShadow: '6px 6px 0px #000',
-              fontSize: '20px'
+              fontSize: 'clamp(16px, 4vw, 20px)'
             }}
           >
             💾 DOWNLOAD SLOP 💾
