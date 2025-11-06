@@ -145,6 +145,7 @@ export default function MemeGenerator() {
               const stream = new ReadableStream({
                 start(controller) {
                   function pump(): Promise<void> {
+                    if (!reader) return Promise.resolve()
                     return reader.read().then(({ done, value }) => {
                       if (done) {
                         controller.close()
@@ -158,16 +159,18 @@ export default function MemeGenerator() {
                         }, 300)
                         toast.success('✨ SLOP READY!', { id: 'gen' })
                         resolve(null)
-                        return
+                        return Promise.resolve()
                       }
                       
-                      loadedBytes += value.length
-                      if (totalBytes > 0) {
-                        const progress = Math.min((loadedBytes / totalBytes) * 95, 95)
-                        setGenerationProgress(progress)
+                      if (value) {
+                        loadedBytes += value.length
+                        if (totalBytes > 0) {
+                          const progress = Math.min((loadedBytes / totalBytes) * 95, 95)
+                          setGenerationProgress(progress)
+                        }
+                        
+                        controller.enqueue(value)
                       }
-                      
-                      controller.enqueue(value)
                       return pump()
                     })
                   }
@@ -183,6 +186,20 @@ export default function MemeGenerator() {
                   URL.revokeObjectURL(blobUrl)
                 }
                 img.src = blobUrl
+              }).catch(() => {
+                // Fallback to direct image loading
+                img.onload = () => {
+                  clearInterval(progressTracker)
+                  setGenerationProgress(100)
+                  setImageUrl(url)
+                  setTimeout(() => {
+                    setGenerating(false)
+                    setGenerationProgress(0)
+                  }, 300)
+                  toast.success('✨ SLOP READY!', { id: 'gen' })
+                  resolve(null)
+                }
+                img.src = url
               })
             })
             .catch(() => {
