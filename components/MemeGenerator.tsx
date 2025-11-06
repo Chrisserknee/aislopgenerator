@@ -263,8 +263,9 @@ export default function MemeGenerator() {
 
     } catch (error) {
       clearInterval(progressTracker)
+      const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=256&height=256&seed=${Date.now()}&nologo=true`
       setGenerationProgress(100)
-      setImageUrl(url)
+      setImageUrl(fallbackUrl)
       setTimeout(() => {
         setGenerating(false)
         setGenerationProgress(0)
