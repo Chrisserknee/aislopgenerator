@@ -144,9 +144,14 @@ export default function MemeGenerator() {
               
               const stream = new ReadableStream({
                 start(controller) {
+                  const currentReader = reader
+                  if (!currentReader) {
+                    controller.close()
+                    return
+                  }
+                  
                   function pump(): Promise<void> {
-                    if (!reader) return Promise.resolve()
-                    return reader.read().then(({ done, value }) => {
+                    return currentReader.read().then(({ done, value }) => {
                       if (done) {
                         controller.close()
                         // Image loaded
@@ -172,6 +177,21 @@ export default function MemeGenerator() {
                         controller.enqueue(value)
                       }
                       return pump()
+                    }).catch((error) => {
+                      controller.close()
+                      // Fallback
+                      img.onload = () => {
+                        clearInterval(progressTracker)
+                        setGenerationProgress(100)
+                        setImageUrl(url)
+                        setTimeout(() => {
+                          setGenerating(false)
+                          setGenerationProgress(0)
+                        }, 300)
+                        toast.success('✨ SLOP READY!', { id: 'gen' })
+                        resolve(null)
+                      }
+                      img.src = url
                     })
                   }
                   return pump()
